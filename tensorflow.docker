@@ -1,4 +1,4 @@
 docker run -it \
 -v ${PWD}:/files \
--v ${PWD}/python:/usr/local/lib/python2.7/dist-packages/tensorflow/mystuff \
+-v ${PWD}:/usr/local/lib/python2.7/dist-packages/tensorflow/mystuff \
 -p 8888:8888 gcr.io/tensorflow/tensorflow
