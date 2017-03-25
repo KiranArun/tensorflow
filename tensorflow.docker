@@ -1,0 +1,4 @@
+docker run -it \
+-v ${PWD}:/files \
+-v ${PWD}:/usr/local/lib/python2.7/dist-packages/tensorflow/mystuff \
+-p 8888:8888 -p 6006:6006 tensorflow/tensorflow
