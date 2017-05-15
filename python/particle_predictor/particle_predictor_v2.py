@@ -33,7 +33,8 @@ def training_data():
         
         # increase gradient by 1
         n+=1
-        
+    
+    y = y.astype(np.int32)
     # return the training data
     # and number of lines to learn
     return(y,np.size(y,0))
@@ -120,7 +121,7 @@ gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.4)
 sess = tf.InteractiveSession(config=tf.ConfigProto(gpu_options=gpu_options)) 
 
 # initialize variables
-init = tf.initialize_all_variables()
+init = tf.global_variables_initializer()
 sess.run(init)
 
 # now we run the learning loop
@@ -130,8 +131,8 @@ for _ in range(iterations):
     x_data, y_data = set_data()
     # only use one lines data
     # chooses line data by evenly spreading data over iterations
-    x_data = x_data[_//(iterations/(training_lines-0.))]
-    y_data = y_data[_//(iterations/(training_lines-0.))]
+    x_data = x_data[np.round(_//(iterations/(training_lines-0.)), 0).astype(np.int32)]
+    y_data = y_data[np.round(_//(iterations/(training_lines-0.)), 0).astype(np.int32)]
     
     # run the training optimizer
     sess.run(train_step, feed_dict={x: x_data, y_: y_data})
@@ -160,6 +161,7 @@ for i in range(vals):
     val = int(input())
     test_line = np.append(test_line, val)
     
+test_line = test_line.astype(np.int32)
 # record the last value of the points
 # this is needed because we have only worked out the gradient not the bias
 l_val = test_line[-1]

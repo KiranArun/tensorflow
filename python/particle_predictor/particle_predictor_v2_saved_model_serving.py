@@ -1,6 +1,15 @@
 # import tensorflow and numpy
 import tensorflow as tf
 import numpy as np
+import os
+import sys
+from tensorflow.python.util import compat
+from tensorflow.python.saved_model import builder as saved_model_builder
+from tensorflow.python.saved_model import signature_constants
+from tensorflow.python.saved_model import signature_def_utils
+from tensorflow.python.saved_model import tag_constants
+from tensorflow.python.saved_model import utils
+from tensorflow.contrib.session_bundle import exporter
 
 
 # setup the parameters
@@ -8,9 +17,8 @@ import numpy as np
 gradients = 10
 # number of input values
 vals = 3
-iterations = 5000
+iterations = 500
 learning_rate = 0.5
-model_path = "/tmp/saved_models/model.ckpt"
 
 # defining function to make training data
 def training_data():
@@ -27,15 +35,15 @@ def training_data():
     # loop so it cycles through every gradient
     for i in range(gradients):
         
-		y = np.append(y, x*n).reshape(rows,vals+1)
+        y = np.append(y, x*n).reshape(rows,vals+1)
             
         # increase number of rows to reshape it
-		rows += 1
+        rows += 1
         
         # increase gradient by 1
-		n+=1
-        
-		y = y.astype(np.int32)
+        n+=1
+    
+    y= y.astype(np.int32)
     # return the training data
     # and number of lines to learn
     return(y,np.size(y,0))
@@ -77,8 +85,7 @@ def set_data():
         lab[i][0][data[i][vals-(vals-1)]] = 1
         
     # here, we reshape it tto the full length 1d array
-    in_data = in_data.reshape(training_lines,1,full_length).astype(np.int32)
-    
+    in_data = in_data.reshape(training_lines,1,full_length)
     
     # return the data and labels
     return(in_data,lab)    
@@ -99,8 +106,6 @@ W = tf.Variable(tf.zeros([full_length, gradients]))
 b = tf.Variable(tf.zeros([gradients]))
 # function which gives the output of training data
 y = tf.matmul(x, W) + b
-
-saver = tf.train.Saver()
 
 # we will feed the labels in here
 y_ = tf.placeholder(tf.float32, [None, gradients])
@@ -152,7 +157,52 @@ for _ in range(iterations):
 ###################################################################################
 ###################################################################################
 
+x_data, y_data = set_data()
 
 
-save_path = saver.save(sess, model_path)
-print("Model saved in file: %s" % save_path)
+export_path_base = "/tmp/saved_models/"
+export_path = os.path.join(
+      compat.as_bytes(export_path_base),
+      compat.as_bytes(str(1)))
+      
+print 'Exporting trained model to', export_path
+builder = saved_model_builder.SavedModelBuilder(export_path)
+
+# Build the signature_def_map.
+classification_inputs = utils.build_tensor_info(x)
+classification_outputs_classes = utils.build_tensor_info(y_data)
+classification_outputs_scores = utils.build_tensor_info(y)
+
+classification_signature = signature_def_utils.build_signature_def(
+      inputs={signature_constants.CLASSIFY_INPUTS: classification_inputs},
+      outputs={
+          signature_constants.CLASSIFY_OUTPUT_CLASSES:
+              classification_outputs_classes,
+          signature_constants.CLASSIFY_OUTPUT_SCORES:
+              classification_outputs_scores
+      },
+      method_name=signature_constants.CLASSIFY_METHOD_NAME)
+
+tensor_info_x = utils.build_tensor_info(x)
+tensor_info_y = utils.build_tensor_info(y)
+
+prediction_signature = signature_def_utils.build_signature_def(
+      inputs={'images': tensor_info_x},
+      outputs={'scores': tensor_info_y},
+      method_name=signature_constants.PREDICT_METHOD_NAME)
+
+legacy_init_op = tf.group(tf.tables_initializer(), name='legacy_init_op')
+
+builder.add_meta_graph_and_variables(
+      sess, [tag_constants.SERVING],
+      signature_def_map={
+          'predict_images':
+              prediction_signature,
+          signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
+              classification_signature,
+      },
+      legacy_init_op=legacy_init_op)
+
+builder.save()
+
+print 'Done exporting!'
