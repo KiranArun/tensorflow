@@ -19,7 +19,7 @@ b = tf.Variable(tf.zeros([gradients]))
 y = tf.matmul(x, W) + b
 
 saver = tf.train.Saver()
-init = tf.initialize_all_variables()
+init = tf.global_variables_initializer()
 
 with tf.Session() as sess:
 	
@@ -37,6 +37,7 @@ with tf.Session() as sess:
 		val = int(input())
 		test_line = np.append(test_line, val)
     
+	test_line = test_line.astype(np.int32)
 	# record the last value of the points
 	# this is needed because we have only worked out the gradient not the bias
 	l_val = test_line[-1]
