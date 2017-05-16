@@ -17,7 +17,7 @@ from tensorflow.contrib.session_bundle import exporter
 gradients = 10
 # number of input values
 vals = 3
-iterations = 500
+iterations = 2000
 learning_rate = 0.5
 
 # defining function to make training data
@@ -117,7 +117,9 @@ cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_
 #train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)
 train_step = tf.train.AdagradOptimizer(learning_rate).minimize(cross_entropy)
 
-
+serialized_tf_example = tf.placeholder(tf.string, name='tf_example')
+prediction_classes = y
+values = y
 ###################################################################################
 ###################################################################################
 
@@ -157,21 +159,18 @@ for _ in range(iterations):
 ###################################################################################
 ###################################################################################
 
-x_data, y_data = set_data()
 
+export_path_base = "/my-files/tmp/saved_models/"
 
-export_path_base = "/tmp/saved_models/"
-export_path = os.path.join(
-      compat.as_bytes(export_path_base),
-      compat.as_bytes(str(1)))
+export_path = os.path.join(compat.as_bytes(export_path_base),compat.as_bytes(str(1)))
       
 print 'Exporting trained model to', export_path
 builder = saved_model_builder.SavedModelBuilder(export_path)
 
 # Build the signature_def_map.
-classification_inputs = utils.build_tensor_info(x)
-classification_outputs_classes = utils.build_tensor_info(y_data)
-classification_outputs_scores = utils.build_tensor_info(y)
+classification_inputs = utils.build_tensor_info(serialized_tf_example)
+classification_outputs_classes = utils.build_tensor_info(prediction_classes)
+classification_outputs_scores = utils.build_tensor_info(values)
 
 classification_signature = signature_def_utils.build_signature_def(
       inputs={signature_constants.CLASSIFY_INPUTS: classification_inputs},
@@ -187,7 +186,7 @@ tensor_info_x = utils.build_tensor_info(x)
 tensor_info_y = utils.build_tensor_info(y)
 
 prediction_signature = signature_def_utils.build_signature_def(
-      inputs={'images': tensor_info_x},
+      inputs={'frames': tensor_info_x},
       outputs={'scores': tensor_info_y},
       method_name=signature_constants.PREDICT_METHOD_NAME)
 
@@ -195,12 +194,10 @@ legacy_init_op = tf.group(tf.tables_initializer(), name='legacy_init_op')
 
 builder.add_meta_graph_and_variables(
       sess, [tag_constants.SERVING],
-      signature_def_map={
-          'predict_images':
+      signature_def_map={'predict_particle':
               prediction_signature,
           signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
-              classification_signature,
-      },
+              classification_signature,},
       legacy_init_op=legacy_init_op)
 
 builder.save()
