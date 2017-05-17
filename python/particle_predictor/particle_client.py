@@ -23,7 +23,8 @@ from __future__ import print_function
 # This is a placeholder for a Google-internal import.
 
 from grpc.beta import implementations
-#import tensorflow as tf
+import tensorflow as tf
+import numpy as np
 
 from tensorflow_serving.apis import predict_pb2
 from tensorflow_serving.apis import prediction_service_pb2
@@ -34,6 +35,15 @@ FLAGS = tf.app.flags.FLAGS
 
 
 def main(_):
+	
+	gradients = 10
+	# number of input values
+	vals = 3
+	
+	length = (gradients-1)*vals-1
+
+	# the full length is the length of all the input frames stacked into one, 1d array
+	full_length = length*vals
 	
 	host, port = FLAGS.server.split(':')
   
@@ -64,21 +74,21 @@ def main(_):
 		# return array
 		return(input_array)
   
-	with test_model() as f:
-		# See prediction_service.proto for gRPC request/response details.
-		data = f
+	
+	# See prediction_service.proto for gRPC request/response details.
+	data = test_model()
+	print(data)
+	request = predict_pb2.PredictRequest()
 		
-		request = predict_pb2.PredictRequest()
+	request.model_spec.name = 'particle_predictor'
 		
-		request.model_spec.name = 'particle_predictor'
+	request.model_spec.signature_name = 'predict_particle'
 		
-		request.model_spec.signature_name = 'predict_particles'
+	request.inputs['frames'].CopyFrom(tf.contrib.util.make_tensor_proto(data, shape=[1,data[0].size]))
 		
-		request.inputs['images'].CopyFrom(tf.contrib.util.make_tensor_proto(data, shape=[1]))
+	result = stub.Predict(request, 10.0)  # 10 secs timeout
 		
-		result = stub.Predict(request, 10.0)  # 10 secs timeout
-		
-		print(result)
+	print(result)
 
 
 if __name__ == '__main__':
