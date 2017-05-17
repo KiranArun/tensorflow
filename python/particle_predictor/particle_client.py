@@ -50,6 +50,7 @@ def main(_):
 	channel = implementations.insecure_channel(host, int(port))
   
 	stub = prediction_service_pb2.beta_create_PredictionService_stub(channel)
+
 	# Send request
   
 	test_line = [1,2,3]
@@ -84,11 +85,11 @@ def main(_):
 		
 	request.model_spec.signature_name = 'predict_particle'
 		
-	request.inputs['frames'].CopyFrom(tf.contrib.util.make_tensor_proto(data, shape=[1,data[0].size]))
+	request.inputs['frames'].CopyFrom(tf.contrib.util.make_tensor_proto(data, shape=[1,full_length]))
 		
 	result = stub.Predict(request, 10.0)  # 10 secs timeout
 		
-	print(result)
+	print('result =', result)
 
 
 if __name__ == '__main__':
