@@ -146,7 +146,7 @@ def main(_):
 	#train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)
 	train_step = tf.train.AdagradOptimizer(learning_rate).minimize(cross_entropy)
 	
-	values, indices = tf.nn.top_k(tf.nn.softmax(y), 10)
+	values, indices = tf.nn.top_k(y, 10)
 	table = tf.contrib.lookup.index_to_string_table_from_tensor(tf.constant([str(i) for i in xrange(10)]))
 	prediction_classes = table.lookup(tf.to_int64(indices))
 
@@ -196,24 +196,23 @@ def main(_):
 		  
 	print 'Exporting trained model to', export_path
 	builder = saved_model_builder.SavedModelBuilder(export_path)
-
+	
 	# Build the signature_def_map.
 	classification_inputs = utils.build_tensor_info(serialized_tf_example)
 	classification_outputs_classes = utils.build_tensor_info(prediction_classes)
 	classification_outputs_scores = utils.build_tensor_info(values)
 
 	classification_signature = signature_def_utils.build_signature_def(
-		  inputs={signature_constants.CLASSIFY_INPUTS: classification_inputs},
-		  outputs={
-			  signature_constants.CLASSIFY_OUTPUT_CLASSES:
-				  classification_outputs_classes,
-			  signature_constants.CLASSIFY_OUTPUT_SCORES:
-				  classification_outputs_scores
+		inputs={
+			signature_constants.CLASSIFY_INPUTS: classification_inputs},
+		outputs={
+			signature_constants.CLASSIFY_OUTPUT_CLASSES:classification_outputs_classes,
+			signature_constants.CLASSIFY_OUTPUT_SCORES:classification_outputs_scores
 		  },
 		  method_name=signature_constants.CLASSIFY_METHOD_NAME)
 
 	tensor_info_x = utils.build_tensor_info(x)
-	tensor_info_y = utils.build_tensor_info(tf.nn.softmax(y))
+	tensor_info_y = utils.build_tensor_info(y)
 
 	prediction_signature = signature_def_utils.build_signature_def(
 		  inputs={'frames': tensor_info_x},

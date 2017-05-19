@@ -90,6 +90,10 @@ def main(_):
 	# the full length is the length of all the input frames stacked into one, 1d array
 	full_length = length*vals
 
+	serialized_tf_example = tf.placeholder(tf.string, name='tf_example')
+	feature_configs = {'x': tf.FixedLenFeature(shape=[full_length], dtype=tf.float32),}
+	tf_example = tf.parse_example(serialized_tf_example, feature_configs)
+	
 	# this function turns the data into the arrays explained above
 	def set_data():
 		
@@ -124,7 +128,8 @@ def main(_):
 
 	# we define the weights, biases and inputs
 	# this will be input training data
-	x = tf.placeholder(tf.float32, [None, full_length])
+	#x = tf.placeholder(tf.float32, [None, full_length])
+	x = tf.identity(tf_example['x'], name='x')
 	# weights and biases
 	W = tf.Variable(tf.zeros([full_length, gradients]))
 	b = tf.Variable(tf.zeros([gradients]))
@@ -140,10 +145,11 @@ def main(_):
 	# AdagradOptimizer works much better than GradientDescentOptimizer
 	#train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)
 	train_step = tf.train.AdagradOptimizer(learning_rate).minimize(cross_entropy)
+	
+	values, indices = tf.nn.top_k(y, 10)
+	table = tf.contrib.lookup.index_to_string_table_from_tensor(tf.constant([str(i) for i in xrange(10)]))
+	prediction_classes = table.lookup(tf.to_int64(indices))
 
-	serialized_tf_example = tf.placeholder(tf.string, name='tf_example')
-	prediction_classes = y
-	values = y
 ###################################################################################
 ###################################################################################
 
@@ -190,19 +196,18 @@ def main(_):
 		  
 	print 'Exporting trained model to', export_path
 	builder = saved_model_builder.SavedModelBuilder(export_path)
-
+	
 	# Build the signature_def_map.
 	classification_inputs = utils.build_tensor_info(serialized_tf_example)
 	classification_outputs_classes = utils.build_tensor_info(prediction_classes)
 	classification_outputs_scores = utils.build_tensor_info(values)
 
 	classification_signature = signature_def_utils.build_signature_def(
-		  inputs={signature_constants.CLASSIFY_INPUTS: classification_inputs},
-		  outputs={
-			  signature_constants.CLASSIFY_OUTPUT_CLASSES:
-				  classification_outputs_classes,
-			  signature_constants.CLASSIFY_OUTPUT_SCORES:
-				  classification_outputs_scores
+		inputs={
+			signature_constants.CLASSIFY_INPUTS: classification_inputs},
+		outputs={
+			signature_constants.CLASSIFY_OUTPUT_CLASSES:classification_outputs_classes,
+			signature_constants.CLASSIFY_OUTPUT_SCORES:classification_outputs_scores
 		  },
 		  method_name=signature_constants.CLASSIFY_METHOD_NAME)
 

@@ -37,60 +37,56 @@ FLAGS = tf.app.flags.FLAGS
 def main(_):
 	
 	gradients = 10
-	# number of input values
 	vals = 3
-	
 	length = (gradients-1)*vals-1
-
-	# the full length is the length of all the input frames stacked into one, 1d array
 	full_length = length*vals
 	
 	host, port = FLAGS.server.split(':')
-  
 	channel = implementations.insecure_channel(host, int(port))
-  
 	stub = prediction_service_pb2.beta_create_PredictionService_stub(channel)
 
-	# Send request
-  
-	test_line = [1,2,3]
-	def test_model():
-		# first value of the points to take away the b later
-		f_value = test_line[0]
-    
-		# take away the first value so its only left with the difference between
-		# the points and predicts y = Mx , not y = Mx+ b
-		for z in range(vals):
-			test_line[z] = test_line[z] - f_value
+	input_line = np.array([])
+	
+	print('input values, the max gradient is', gradients-1)
+	for i in range(vals):
+		print('\nvalue',i+1,'?')
+		val = int(input())
+		input_line = np.append(input_line, val)
+		
+	l_val = input_line[-1]
+	print(input_line)
 
+	def test_model():
+		
+		test_line = input_line
+		f_value = test_line[0]
+		test_line = np.subtract(test_line,f_value)
+		
 		input_array = np.array([])
-		# for each input value, write to the input array
-		# with a 1 in the position
 		for a in range(vals):
 			test_array = np.zeros([1,length])
 			test_array[0][test_line[a]] = 1
-			# we write to array and shape so new line for each test value
 			input_array = np.append(input_array, test_array).reshape([1,(a+1)*length])
-        
-		# return array
-		return(input_array)
+		return(input_array.astype(np.float32))
   
-	
-	# See prediction_service.proto for gRPC request/response details.
 	data = test_model()
 	print(data)
+	
 	request = predict_pb2.PredictRequest()
 		
 	request.model_spec.name = 'particle_predictor'
-		
 	request.model_spec.signature_name = 'predict_particle'
-		
 	request.inputs['frames'].CopyFrom(tf.contrib.util.make_tensor_proto(data, shape=[1,full_length]))
 		
 	result = stub.Predict(request, 10.0)  # 10 secs timeout
-		
+	
+	probs = result
+	probs = np.array(result.outputs['scores'].float_val)
+	learnt_ans = np.argmax(probs)+l_val	
 	print('result =', result)
-
+	print(probs)
+	print('line =', input_line)
+	print('prediction =', learnt_ans)
 
 if __name__ == '__main__':
   tf.app.run()

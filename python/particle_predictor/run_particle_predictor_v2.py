@@ -51,8 +51,7 @@ with tf.Session() as sess:
     
 		# take away the first value so its only left with the difference between
 		# the points and predicts y = Mx , not y = Mx+ b
-		for z in range(vals):
-			test_line[z] = test_line[z] - f_value
+		test_line = np.subtract(test_line,f_value)
 
 		input_array = np.array([])
 		# for each input value, write to the input array
