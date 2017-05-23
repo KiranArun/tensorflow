@@ -17,11 +17,13 @@ from tensorflow.contrib.session_bundle import exporter
 default_work_dir = '/my-files/tmp/saved_models/'
 default_iterations = 5000
 
+# set parameters from cli
 tf.app.flags.DEFINE_integer('version', 1, 'version number of the model.')
 tf.app.flags.DEFINE_integer('iterations', default_iterations,'number of training iterations.')
 tf.app.flags.DEFINE_string('work_dir', default_work_dir, 'Working directory.')
 FLAGS = tf.app.flags.FLAGS
 
+# exit if any parameters not compatible
 def main(_):
 	if FLAGS.version == None:
 		print 'please input a version number [--version=x]'

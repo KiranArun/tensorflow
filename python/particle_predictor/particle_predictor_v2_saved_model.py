@@ -153,6 +153,6 @@ for _ in range(iterations):
 ###################################################################################
 
 
-
+# save model in specified area
 save_path = saver.save(sess, model_path)
 print("Model saved in file: %s" % save_path)

@@ -23,8 +23,7 @@ init = tf.global_variables_initializer()
 
 with tf.Session() as sess:
 	
-	#sess.run(init)
-	
+	# restore model
 	saver.restore(sess, model_path)
 	
 	# initialize array to record test values
