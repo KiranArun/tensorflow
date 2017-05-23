@@ -1,4 +1,7 @@
 from __future__ import print_function
+
+# This is a placeholder for a Google-internal import.
+
 from grpc.beta import implementations
 import tensorflow as tf
 import numpy as np
@@ -6,20 +9,19 @@ import numpy as np
 from tensorflow_serving.apis import predict_pb2
 from tensorflow_serving.apis import prediction_service_pb2
 
+# defining server location from command line
 tf.app.flags.DEFINE_string('server', 'localhost:9000', 'PredictionService host:port')
 FLAGS = tf.app.flags.FLAGS
 
 
 def main(_):
 	
-	# number of lines and points
-	# these must be the same as in the model builder
-	# to format the input data properly
-	gradients = 10
-	vals = 3
+	vals = 4
+	max_answer = 100
+	gradients = max_answer/(vals)+1
 	
 	# extra variables to format input data
-	length = (gradients-1)*vals-1
+	length = max_answer
 	full_length = length*vals
 	
 	# set host and port
@@ -38,34 +40,34 @@ def main(_):
 		val = int(input())
 		input_line = np.append(input_line, val)
 		
-	# record the last value as we do not predict b
 	l_val = input_line[-1]
-	print(input_line)
 
-	# function to format the data
-	def test_model():
-		
-		test_line = input_line
-		f_value = test_line[0]
-		test_line = np.subtract(test_line,f_value)
-		
-		input_array = np.array([])
-		for a in range(vals):
-			test_array = np.zeros([1,length])
-			test_array[0][test_line[a]] = 1
-			input_array = np.append(input_array, test_array).reshape([1,(a+1)*length])
-		return(input_array.astype(np.float32))
-  
-	data = test_model()
-	print(data, data.shape)
 	
+	def format_data(line_data):
+		number_points = vals
+		number_lines = 1
+		first_value = line_data[0]
+		training_line_data = np.subtract(line_data,first_value)
+		input_data = np.zeros([vals,length])
+        
+		for i in range(number_lines):
+			for a in range(number_points):
+				input_data[a,line_data[a]] = 1
+				
+		input_data = input_data.reshape(1,full_length)
+		return(input_data.astype(np.float32))
+	
+	data = format_data(input_line)
+	
+	print(data, data.shape)
 	
 	request = predict_pb2.PredictRequest()
 		
 	request.model_spec.name = 'particle_predictor'
 	request.model_spec.signature_name = 'predict_particle'
 	request.inputs['frames'].CopyFrom(tf.contrib.util.make_tensor_proto(data, shape=[1,full_length]))
-		
+	request.inputs['keep_prob'].CopyFrom(tf.contrib.util.make_tensor_proto(1.0))
+
 	result = stub.Predict(request, 10.0)  # 10 secs timeout
 	
 	# display results and predictions

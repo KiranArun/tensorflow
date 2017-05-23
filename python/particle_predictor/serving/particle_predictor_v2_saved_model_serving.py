@@ -14,7 +14,7 @@ from tensorflow.contrib.session_bundle import exporter
 
 ###################################################################################
 ###################################################################################
-default_work_dir = '/my-files/tmp/saved_models/'
+default_work_dir = '/my-files/tmp/saved_models/pp_v2/'
 default_iterations = 5000
 
 # set parameters from cli
@@ -54,7 +54,7 @@ def main(_):
 		# array which we are using as our x values 
 		# in equation of linear line, y = Mx
 		# it includes 1 extra value as this will be used as our labal
-		x = np.arange(vals+1).astype(np.int32)
+		x = np.arange(vals+1)
 		# empty array to write our training data to
 		y = np.array([])
 		
@@ -69,10 +69,9 @@ def main(_):
 			# increase gradient by 1
 			n+=1
 		
-		y= y.astype(np.int32)
 		# return the training data
 		# and number of lines to learn
-		return(y,np.size(y,0))
+		return(y.astype(np.int32),np.size(y,0))
 
 	# print the training data
 	print(training_data())
@@ -118,7 +117,7 @@ def main(_):
 		in_data = in_data.reshape(training_lines,1,full_length)
 		
 		# return the data and labels
-		return(in_data,lab)    
+		return(in_data.astype(np.int32),lab.astype(np.int32))    
 
 	# print converted data
 	#print(set_data())
