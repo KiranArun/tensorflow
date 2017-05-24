@@ -1,11 +1,21 @@
 import tensorflow as tf
 import numpy as np
 
-model_path = "/tmp/saved_models/model.ckpt"
-gradients = 10
+# setup the parameters
+# number of input values
 vals = 3
+# max answer, so basically the width of the frame
+max_answer = 40
+# number of different M's, biggest gradient will fit in frame
+gradients = max_answer/(vals)+1
 
-length = (gradients-1)*vals-1
+# I am using a GPU
+# this line limits memory usage of the GPU to 0.25 when session is created
+gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.25)
+
+model_path = "/tmp/saved_models/model.ckpt"
+
+length = max_answer
 
 # the full length is the length of all the input frames stacked into one, 1d array
 full_length = length*vals
@@ -57,7 +67,7 @@ with tf.Session() as sess:
 		# with a 1 in the position
 		for a in range(vals):
 			test_array = np.zeros([1,length])
-			test_array[0][test_line[a]] = 1
+			test_array[0,test_line[a]] = 1
 			# we write to array and shape so new line for each test value
 			input_array = np.append(input_array, test_array).reshape([1,(a+1)*length])
         

@@ -2,17 +2,25 @@
 import tensorflow as tf
 import numpy as np
 
-
 # setup the parameters
-# number of different M's
-gradients = 10
 # number of input values
 vals = 3
-iterations = 5000
-learning_rate = 0.5
+# max answer, so basically the width of the frame
+max_answer = 40
+# number of different M's, biggest gradient will fit in frame
+gradients = max_answer/(vals)+1
+iterations = 11000
+learning_rate = 0.3
+
+# I am using a GPU
+# this line limits memory usage of the GPU to 0.25 when session is created
+gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.25)
+
 model_path = "/tmp/saved_models/model.ckpt"
 
-# defining function to make training data
+###################################################################################
+###################################################################################
+
 def training_data():
     
     n = 0
@@ -20,41 +28,36 @@ def training_data():
     # array which we are using as our x values 
     # in equation of linear line, y = Mx
     # it includes 1 extra value as this will be used as our labal
-    x = np.arange(vals+1).astype(np.int32)
+    X = np.arange(vals+1).astype(np.int32)
     # empty array to write our training data to
-    y = np.array([])
+    Y = np.array([])
     
     # loop so it cycles through every gradient
     for i in range(gradients):
         
-		y = np.append(y, x*n).reshape(rows,vals+1)
+        Y = np.append(Y, X*n).reshape(rows,vals+1)
             
         # increase number of rows to reshape it
-		rows += 1
+        rows += 1
         
         # increase gradient by 1
-		n+=1
-        
-		y = y.astype(np.int32)
+        n+=1
+    
+    Y = Y.astype(np.int32)
     # return the training data
     # and number of lines to learn
-    return(y,np.size(y,0))
-
-# print the training data
-print(training_data())
-
+    return(Y,np.size(Y,0))
 
 # data = training data
 # training lines = number of different lines
 data,training_lines = training_data()
+print(data, training_lines)
 
 # the length is for when we convert the numbers into a binary array
 # the array will be all zeros except one, which will be 1
 # this will be the particle in this pont in time
 # each one is like a frame in a video
-# this value is the size of the largest M value multiplied by largest x values
-length = (gradients-1)*vals-1
-
+length = max_answer
 # the full length is the length of all the input frames stacked into one, 1d array
 full_length = length*vals
 
@@ -71,17 +74,17 @@ def set_data():
         # we need to set each individual input value
         for a in range(vals):
             # set the value to a 1
-            in_data[i][a][data[i][a]] = 1
+            in_data[i,a,data[i,a]] = 1
             
         # set the label value to a 1
-        lab[i][0][data[i][vals-(vals-1)]] = 1
+        lab[i,0,data[i,vals-(vals-1)]] = 1
         
     # here, we reshape it tto the full length 1d array
-    in_data = in_data.reshape(training_lines,1,full_length).astype(np.int32)
+    in_data = in_data.reshape(training_lines,1,full_length)
     
     
     # return the data and labels
-    return(in_data,lab)    
+    return(in_data.astype(np.int32),lab.astype(np.int32))    
 
 # print converted data
 #print(set_data())
@@ -117,10 +120,6 @@ train_step = tf.train.AdagradOptimizer(learning_rate).minimize(cross_entropy)
 ###################################################################################
 
 
-# I am using a GPU
-# this line limits memory usage of the GPU to 0.4 when session is created
-gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.4)
-
 # create interactive session using the GPU line for above
 sess = tf.InteractiveSession(config=tf.ConfigProto(gpu_options=gpu_options)) 
 
@@ -133,10 +132,10 @@ for _ in range(iterations):
 
     # set training data and labels
     x_data, y_data = set_data()
-    # only use one lines data
-    # chooses line data by evenly spreading data over iterations
-    x_data = x_data[np.round(_//(iterations/(training_lines-0.)), 0).astype(np.int32)]
-    y_data = y_data[np.round(_//(iterations/(training_lines-0.)), 0).astype(np.int32)]
+    
+    # use next line each step
+    x_data = x_data[_%training_lines]
+    y_data = y_data[_%training_lines]
     
     # run the training optimizer
     sess.run(train_step, feed_dict={x: x_data, y_: y_data})

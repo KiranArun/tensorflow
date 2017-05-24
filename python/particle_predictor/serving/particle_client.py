@@ -7,19 +7,23 @@ from tensorflow_serving.apis import predict_pb2
 from tensorflow_serving.apis import prediction_service_pb2
 
 tf.app.flags.DEFINE_string('server', 'localhost:9000', 'PredictionService host:port')
+tf.app.flags.DEFINE_integer('points', '3', 'number of values to input')
+tf.app.flags.DEFINE_string('max_answer', '40', 'width of frame')
 FLAGS = tf.app.flags.FLAGS
 
 
 def main(_):
 	
-	# number of lines and points
-	# these must be the same as in the model builder
-	# to format the input data properly
-	gradients = 10
-	vals = 3
+	# setup the parameters, must the same as model
+	# number of input values
+	vals = FLAGS.points
+	# max answer, so basically the width of the frame
+	max_answer = FLAGS.max_answer
+	# number of different M's, biggest gradient will fit in frame
+	gradients = max_answer/(vals)+1
 	
 	# extra variables to format input data
-	length = (gradients-1)*vals-1
+	length = max_answer
 	full_length = length*vals
 	
 	# set host and port
@@ -52,7 +56,7 @@ def main(_):
 		input_array = np.array([])
 		for a in range(vals):
 			test_array = np.zeros([1,length])
-			test_array[0][test_line[a]] = 1
+			test_array[0,test_line[a]] = 1
 			input_array = np.append(input_array, test_array).reshape([1,(a+1)*length])
 		return(input_array.astype(np.float32))
   
