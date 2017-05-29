@@ -11,13 +11,14 @@ from tensorflow_serving.apis import prediction_service_pb2
 
 # defining server location from command line
 tf.app.flags.DEFINE_string('server', 'localhost:9000', 'PredictionService host:port')
+tf.app.flags.DEFINE_string('max_answer', '40', 'width of frame')
 FLAGS = tf.app.flags.FLAGS
 
 
 def main(_):
 	
 	vals = 4
-	max_answer = 100
+	max_answer = FLAGS.max_answer
 	gradients = max_answer/(vals)+1
 	
 	# extra variables to format input data

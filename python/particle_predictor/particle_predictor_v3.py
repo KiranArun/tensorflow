@@ -12,7 +12,7 @@ max_answer = 100
 gradients = max_answer/(vals)+1
 iterations = 4000
 # limit gpu memory usage
-gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.6)
+gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.4)
 learning_rate = 1e-5
 
 
@@ -201,7 +201,7 @@ input_array = format_data(test_line, 0)
 #print input_array
 
 
-probs = sess.run(y_conv, feed_dict={x:input_array, keep_prob:1.})
+probs = sess.run(y_conv, feed_dict={x:input_array, keep_prob:1.0})
 # now we have found the predicted gradient,
 # we add the last value to get the next value
 learnt_ans = np.argmax(probs)+last_val

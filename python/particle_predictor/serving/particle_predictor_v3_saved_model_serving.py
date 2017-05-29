@@ -18,6 +18,8 @@ tf.app.flags.DEFINE_integer('version', 1, 'version number of the model.')
 tf.app.flags.DEFINE_integer('iterations', default_iterations,'number of training iterations.')
 tf.app.flags.DEFINE_string('work_dir', default_work_dir, 'Working directory.')
 tf.app.flags.DEFINE_float('gpu_memory', 0.3, 'GPU memory alocated to training')
+tf.app.flags.DEFINE_integer('max_answer', 100, 'Width of frame')
+
 FLAGS = tf.app.flags.FLAGS
 
 # exit if any parameters not compatible
@@ -34,7 +36,7 @@ def main(_):
 		
 
 	vals = 4
-	max_answer = 100
+	max_answer = FLAGS.max_answer
 	gradients = max_answer/(vals)+1
 	iterations = FLAGS.iterations
 	gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=FLAGS.gpu_memory)
