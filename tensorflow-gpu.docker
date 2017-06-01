@@ -1,0 +1,5 @@
+nvidia-docker run -it \
+-v ${PWD}:/my-files \
+-v ${PWD}:/usr/local/lib/python2.7/dist-packages/tensorflow/my-files:ro \
+-v ${PWD}/my-notebooks:/notebooks/my-notebooks/ \
+-p 8888:8888 -p 6006:6006 gcr.io/tensorflow/tensorflow:latest-gpu
