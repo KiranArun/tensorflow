@@ -11,7 +11,7 @@ from tensorflow_serving.apis import prediction_service_pb2
 
 # defining server location from command line
 tf.app.flags.DEFINE_string('server', 'localhost:9000', 'PredictionService host:port')
-tf.app.flags.DEFINE_string('max_answer', '40', 'width of frame')
+tf.app.flags.DEFINE_integer('max_answer', 40, 'width of frame')
 FLAGS = tf.app.flags.FLAGS
 
 
@@ -43,7 +43,7 @@ def main(_):
 		
 	l_val = input_line[-1]
 
-	
+	# format input data to 1d binary array
 	def format_data(line_data):
 		number_points = vals
 		number_lines = 1
@@ -59,16 +59,18 @@ def main(_):
 		return(input_data.astype(np.float32))
 	
 	data = format_data(input_line)
+	#print(data, data.shape)
 	
-	print(data, data.shape)
 	
 	request = predict_pb2.PredictRequest()
 		
 	request.model_spec.name = 'particle_predictor'
 	request.model_spec.signature_name = 'predict_particle'
+	# input data to server
 	request.inputs['frames'].CopyFrom(tf.contrib.util.make_tensor_proto(data, shape=[1,full_length]))
 	request.inputs['keep_prob'].CopyFrom(tf.contrib.util.make_tensor_proto(1.0))
 
+	# get output from server
 	result = stub.Predict(request, 10.0)  # 10 secs timeout
 	
 	# display results and predictions

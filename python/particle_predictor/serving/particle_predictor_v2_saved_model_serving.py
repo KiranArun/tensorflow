@@ -97,6 +97,7 @@ def main(_):
 	# the full length is the length of all the input frames stacked into one, 1d array
 	full_length = length*vals
 
+	# set input data placeholder
 	serialized_tf_example = tf.placeholder(tf.string, name='tf_example')
 	feature_configs = {'x': tf.FixedLenFeature(shape=[full_length], dtype=tf.float32),}
 	tf_example = tf.parse_example(serialized_tf_example, feature_configs)
@@ -135,7 +136,6 @@ def main(_):
 
 	# we define the weights, biases and inputs
 	# this will be input training data
-	#x = tf.placeholder(tf.float32, [None, full_length])
 	x = tf.identity(tf_example['x'], name='x')
 	# weights and biases
 	W = tf.Variable(tf.zeros([full_length, gradients]))
@@ -153,6 +153,7 @@ def main(_):
 	#train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)
 	train_step = tf.train.AdagradOptimizer(learning_rate).minimize(cross_entropy)
 	
+	# 
 	values, indices = tf.nn.top_k(y, gradients)
 	table = tf.contrib.lookup.index_to_string_table_from_tensor(tf.constant([str(i) for i in xrange(gradients)]))
 	prediction_classes = table.lookup(tf.to_int64(indices))

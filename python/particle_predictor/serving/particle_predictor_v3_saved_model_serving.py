@@ -85,7 +85,8 @@ def main(_):
 		
 #############################################################################################
 #############################################################################################
-
+	
+	# functions to create weights and biases
 	def weight_variable(shape):
 	  initial = tf.truncated_normal(shape, stddev=0.1)
 	  return tf.Variable(initial)
@@ -94,19 +95,25 @@ def main(_):
 	  initial = tf.constant(0.1, shape=shape)
 	  return tf.Variable(initial)
 
+	# make a convolutional function
 	def conv2d(x, W):
 	  return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
 
+	# create a pooling function
 	def max_pool_2x2(x):
 	  return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
 
+	# create main nn function
 	def deepnn(x):
+		# create weights and bias for first layer
 		W_conv1 = weight_variable([vals, length, 1, 32])
 		b_conv1 = bias_variable([32])
 
+		# reshape data
 		x_image = tf.reshape(x, [-1,vals,length,1])
 
+		
 		h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
 		h_pool1 = max_pool_2x2(h_conv1)
 		

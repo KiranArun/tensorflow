@@ -18,9 +18,6 @@ gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.25)
 
 model_path = "/tmp/saved_models/model.ckpt"
 
-###################################################################################
-###################################################################################
-
 def training_data():
     
     n = 0
@@ -90,10 +87,6 @@ def set_data():
 #print(set_data())
 
 
-###################################################################################
-###################################################################################
-
-
 # we define the weights, biases and inputs
 # this will be input training data
 x = tf.placeholder(tf.float32, [None, full_length])
@@ -114,10 +107,6 @@ cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_
 # AdagradOptimizer works much better than GradientDescentOptimizer
 #train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)
 train_step = tf.train.AdagradOptimizer(learning_rate).minimize(cross_entropy)
-
-
-###################################################################################
-###################################################################################
 
 
 # create interactive session using the GPU line for above
@@ -144,13 +133,6 @@ for _ in range(iterations):
     if _ % (iterations/20) == 0:
         print 'step', _, 'out of', iterations
         print 'error =', sess.run(cross_entropy, feed_dict={x: x_data, y_: y_data})
-
-
-
-
-###################################################################################
-###################################################################################
-
 
 # save model in specified area
 save_path = saver.save(sess, model_path)
