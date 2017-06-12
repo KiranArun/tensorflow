@@ -52,7 +52,6 @@ def training_data():
 print(training_data())
 
 
-
 # training_line_data = training data in numbers
 # training lines = number of different lines
 training_line_data,training_lines = training_data()
@@ -94,8 +93,6 @@ def set_data():
 # print converted data
 #print(set_data())
 
-
-# In[25]:
 
 # we define the weights, biases and inputs
 # this will be input training data
