@@ -27,8 +27,8 @@ tf.app.flags.DEFINE_integer('max_answer', 100, 'Width of frame')
 
 FLAGS = tf.app.flags.FLAGS
 
-# exit if any parameters not compatible
 def main(_):
+	# exit if any parameters not compatible
 	if FLAGS.iterations <= 0:
 		print 'Please specify a positive value for training iteration.'
 		sys.exit(-1)
@@ -312,6 +312,7 @@ def main(_):
 				  classification_signature,},
 		  legacy_init_op=legacy_init_op)
 
+	# save model
 	builder.save()
 
 	print 'Done exporting!'
