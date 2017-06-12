@@ -1,14 +1,16 @@
+# import dependancies
 from __future__ import print_function
 from grpc.beta import implementations
 import tensorflow as tf
 import numpy as np
-
 from tensorflow_serving.apis import predict_pb2
 from tensorflow_serving.apis import prediction_service_pb2
 
+# set up arguements
+# server location, number of input points and max answer (last 2 must be same as training model)
 tf.app.flags.DEFINE_string('server', 'localhost:9000', 'PredictionService host:port')
-tf.app.flags.DEFINE_integer('points', '3', 'number of values to input')
-tf.app.flags.DEFINE_string('max_answer', '40', 'width of frame')
+tf.app.flags.DEFINE_integer('points', 3, 'number of values to input')
+tf.app.flags.DEFINE_string('max_answer', 40, 'width of frame')
 FLAGS = tf.app.flags.FLAGS
 
 
@@ -22,7 +24,7 @@ def main(_):
 	# number of different M's, biggest gradient will fit in frame
 	gradients = max_answer/(vals)+1
 	
-	# extra variables to format input data
+	#  to format input data
 	length = max_answer
 	full_length = length*vals
 	
@@ -51,25 +53,31 @@ def main(_):
 		
 		test_line = input_line
 		f_value = test_line[0]
+		# take away b
 		test_line = np.subtract(test_line,f_value)
 		
 		input_array = np.array([])
+		# replace specified values with one
 		for a in range(vals):
 			test_array = np.zeros([1,length])
 			test_array[0,test_line[a]] = 1
+			# append new line and reshape to a 1d array
 			input_array = np.append(input_array, test_array).reshape([1,(a+1)*length])
 		return(input_array.astype(np.float32))
   
 	data = test_model()
 	print(data, data.shape)
 	
-	
+	# set request
 	request = predict_pb2.PredictRequest()
 		
 	request.model_spec.name = 'particle_predictor'
 	request.model_spec.signature_name = 'predict_particle'
+	
+	# input data to the server
 	request.inputs['frames'].CopyFrom(tf.contrib.util.make_tensor_proto(data, shape=[1,full_length]))
 		
+	# get result
 	result = stub.Predict(request, 10.0)  # 10 secs timeout
 	
 	# display results and predictions

@@ -12,19 +12,20 @@ from tensorflow.python.saved_model import utils
 from tensorflow.contrib.session_bundle import exporter
 
 
-###################################################################################
-###################################################################################
-default_work_dir = '/my-files/tmp/saved_models/pp_v2/'
+# set default dirto save model
+default_work_dir = '/my-files/tmp/saved_models/pp_v2'
+# set default iterations
 default_iterations = 5000
 
 # set parameters from cli
+# version name, iterations, dir to save model in
 tf.app.flags.DEFINE_integer('version', 1, 'version number of the model.')
 tf.app.flags.DEFINE_integer('iterations', default_iterations,'number of training iterations.')
 tf.app.flags.DEFINE_string('work_dir', default_work_dir, 'Working directory.')
 FLAGS = tf.app.flags.FLAGS
 
-# exit if any parameters not compatible
 def main(_):
+	# exit if any parameters not compatible
 	if FLAGS.version == None:
 		print 'please input a version number [--version=x]'
 		sys.exit(-1)
@@ -35,9 +36,7 @@ def main(_):
 		print 'Please specify a positive value for version number.'
 		sys.exit(-1)
 		
-###################################################################################
-###################################################################################
-	
+
 	# setup the parameters
 	# number of input values
 	vals = 3
@@ -71,7 +70,6 @@ def main(_):
 				
 			# increase number of rows to reshape it
 			rows += 1
-			
 			# increase gradient by 1
 			n+=1
 		
@@ -83,10 +81,10 @@ def main(_):
 	# print the training data
 	print(training_data())
 
-
-	# data = training data
+	
+	# training_line_data = training data in numbers
 	# training lines = number of different lines
-	data,training_lines = training_data()
+	training_line_data,training_lines = training_data()
 
 	# the length is for when we convert the numbers into a binary array
 	# the array will be all zeros except one, which will be 1
@@ -95,52 +93,48 @@ def main(_):
 	length = max_answer
 
 	# the full length is the length of all the input frames stacked into one, 1d array
-	full_length = length*vals
-
-	serialized_tf_example = tf.placeholder(tf.string, name='tf_example')
-	feature_configs = {'x': tf.FixedLenFeature(shape=[full_length], dtype=tf.float32),}
-	tf_example = tf.parse_example(serialized_tf_example, feature_configs)
-	
+	full_length = length*vals 
+		
 	# this function turns the data into the arrays explained above
 	def set_data():
 		
 		# there are two arrays, one for training data and one for labels
-		in_data = np.zeros([training_lines,vals,length])
+		# input_data  is the converted traiing data
+		input_data = np.zeros([training_lines,vals,length])
 		# the labels will be one-hot arrays
-		lab = np.zeros([training_lines,1,gradients])
+		labels = np.zeros([training_lines,1,gradients])
 		
 		# this sets the values specified in the training data to one
 		for i in range(training_lines):
 			# we need to set each individual input value
 			for a in range(vals):
 				# set the value to a 1
-				in_data[i,a,data[i,a]] = 1
+				input_data[i,a,training_line_data[i,a]] = 1
 				
 			# set the label value to a 1
-			lab[i,0,data[i,vals-(vals-1)]] = 1
+			labels[i,0,training_line_data[i,vals-(vals-1)]] = 1
 			
 		# here, we reshape it tto the full length 1d array
-		in_data = in_data.reshape(training_lines,1,full_length)
+		input_data = input_data.reshape(training_lines,1,full_length)
 		
 		# return the data and labels
-		return(in_data.astype(np.int32),lab.astype(np.int32))    
+		return(input_data,labels)      
 
-	# print converted data
-	#print(set_data())
-
-
-###################################################################################
-###################################################################################
 
 
 	# we define the weights, biases and inputs
-	# this will be input training data
-	#x = tf.placeholder(tf.float32, [None, full_length])
-	x = tf.identity(tf_example['x'], name='x')
+	
+	# set placeholder for x, input training data
+	serialized_tf_example = tf.placeholder(tf.string, name='tf_example')
+	feature_configs = {'x': tf.FixedLenFeature(shape=[full_length], dtype=tf.float32),}
+	tf_example = tf.parse_example(serialized_tf_example, feature_configs)
+	x = tf.identity(tf_example['x'], name='x'))
+	
 	# weights and biases
 	W = tf.Variable(tf.zeros([full_length, gradients]))
 	b = tf.Variable(tf.zeros([gradients]))
-	# function which gives the output of training data
+	
+	# function which gives the probabilities
 	y = tf.matmul(x, W) + b
 
 	# we will feed the labels in here
@@ -153,12 +147,13 @@ def main(_):
 	#train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(cross_entropy)
 	train_step = tf.train.AdagradOptimizer(learning_rate).minimize(cross_entropy)
 	
-	values, indices = tf.nn.top_k(y, gradients)
+	# set values to later use for creating the signature
+	values, indices = tf.nn.top_k(y_conv, gradients)
 	table = tf.contrib.lookup.index_to_string_table_from_tensor(tf.constant([str(i) for i in xrange(gradients)]))
 	prediction_classes = table.lookup(tf.to_int64(indices))
 
-###################################################################################
-###################################################################################
+
+
 
 	# create interactive session using the GPU line for above
 	sess = tf.InteractiveSession(config=tf.ConfigProto(gpu_options=gpu_options)) 
@@ -186,22 +181,23 @@ def main(_):
 			print 'error =', sess.run(cross_entropy, feed_dict={x: x_data, y_: y_data})
 
 
-###################################################################################
-###################################################################################
 
 
+	# set directory to save model in
 	export_path_base = FLAGS.work_dir
-
+	# name new directory with version in work dir
 	export_path = os.path.join(compat.as_bytes(export_path_base),compat.as_bytes(str(FLAGS.version)))
 		  
+	# print where its saving the model
 	print 'Exporting trained model to', export_path
 	builder = saved_model_builder.SavedModelBuilder(export_path)
 	
-	# Build the signature_def_map.
-	classification_inputs = utils.build_tensor_info(serialized_tf_example)
-	classification_outputs_classes = utils.build_tensor_info(prediction_classes)
-	classification_outputs_scores = utils.build_tensor_info(values)
+	# Build the signature_def_map
+	classification_inputs = utils.build_tensor_info(serialized_tf_example)        # input with placeholder x
+	classification_outputs_classes = utils.build_tensor_info(prediction_classes)  # output of prediction classes
+	classification_outputs_scores = utils.build_tensor_info(values)               # output of prediction probabilities
 
+	# build signature for classification
 	classification_signature = signature_def_utils.build_signature_def(
 		inputs={
 			signature_constants.CLASSIFY_INPUTS: classification_inputs},
@@ -211,9 +207,11 @@ def main(_):
 		  },
 		  method_name=signature_constants.CLASSIFY_METHOD_NAME)
 
-	tensor_info_x = utils.build_tensor_info(x)
-	tensor_info_y = utils.build_tensor_info(y)
+	
+	tensor_info_x = utils.build_tensor_info(x)          # input data
+	tensor_info_y = utils.build_tensor_info(y_conv)     # prediction probabilities
 
+	# build isgnature for prediction
 	prediction_signature = signature_def_utils.build_signature_def(
 		  inputs={'frames': tensor_info_x},
 		  outputs={'scores': tensor_info_y},
@@ -221,6 +219,7 @@ def main(_):
 
 	legacy_init_op = tf.group(tf.tables_initializer(), name='legacy_init_op')
 
+	# save graph with signature
 	builder.add_meta_graph_and_variables(
 		  sess, [tag_constants.SERVING],
 		  signature_def_map={'predict_particle':
@@ -233,9 +232,6 @@ def main(_):
 
 	print 'Done exporting!'
 
-
-###################################################################################
-###################################################################################
 
 if __name__ == '__main__':
 	tf.app.run()
