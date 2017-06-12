@@ -1,12 +1,13 @@
+# import dependancies
 from __future__ import print_function
 from grpc.beta import implementations
 import tensorflow as tf
 import numpy as np
-
 from tensorflow_serving.apis import predict_pb2
 from tensorflow_serving.apis import prediction_service_pb2
 
 # set up arguements
+# server location, number of input points and max answer (last 2 must be same as training model)
 tf.app.flags.DEFINE_string('server', 'localhost:9000', 'PredictionService host:port')
 tf.app.flags.DEFINE_integer('points', 3, 'number of values to input')
 tf.app.flags.DEFINE_string('max_answer', 40, 'width of frame')
@@ -23,7 +24,7 @@ def main(_):
 	# number of different M's, biggest gradient will fit in frame
 	gradients = max_answer/(vals)+1
 	
-	# extra variables to format input data
+	#  to format input data
 	length = max_answer
 	full_length = length*vals
 	
