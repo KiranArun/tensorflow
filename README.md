@@ -14,3 +14,5 @@ particle_predictor/serving/ model builder and client to be run in tensorflow ser
 
 
 All files with 'test' at the end are not finalised but a spike from an idea.
+
+.docker files are my personal bash scripts to run tensorflow in docker containers.
