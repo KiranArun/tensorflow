@@ -1,18 +1,9 @@
 ## Exploration of Machine Learning using Tensorflow
 
-### An alternative title: AI for Kids!
+I am teaching myself Machine Learning and this is where I keep my notebooks also it also acts as my work log. 
+The files do not form a project but do demonstrate small improvements in my understanding of tensorflow and the use of NN's. 
+GitHub is a great platform to use for education, so when I need help, I can point someone to my notebooks here.
 
-I am/was 15 years old at the time of these commits and the files in this repo represent 6 months of exploratory work. 
-From December to the middle of February this was done whilst still going to school. 
-Work from March to June was done in a 'home education' environment, using an agile methodology.
-
-particle_predictor/ simple prediction of a particle at constant speed
-  * Particle predictor v2 is a single layer CNN
-  * Particle predictor v3 is a multi-layer CNN based off a [tensorflow tutorial](https://www.tensorflow.org/get_started/mnist/pros)
-
-particle_predictor/serving/ model builder and client to be run in tensorflow serving
-
-
-All files with 'test' at the end are not finalised but a spike from an idea.
+Feel free to use any of my work here, it's all under the MIT Licence.
 
 .docker files are my personal bash scripts to run tensorflow in docker containers.
